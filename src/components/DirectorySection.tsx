@@ -7,6 +7,7 @@ import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { AlumniFullProfile } from './AlumniFullProfile';
 import { 
   Search, 
   Filter, 
@@ -21,7 +22,10 @@ import {
   Mail,
   Phone,
   Grid,
-  List
+  List,
+  Eye,
+  Linkedin,
+  UserPlus
 } from 'lucide-react';
 
 export function DirectorySection() {
@@ -29,6 +33,8 @@ export function DirectorySection() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedAlumni, setSelectedAlumni] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showFullProfile, setShowFullProfile] = useState(false);
+  const [connectedAlumni, setConnectedAlumni] = useState(new Set()); // Track connected alumni
   const [filters, setFilters] = useState({
     college: 'all',
     year: 'all',
@@ -190,6 +196,17 @@ export function DirectorySection() {
   const batchmates = filteredAlumni.filter(alumni => alumni.batchmates);
   const allAlumni = filteredAlumni;
 
+  // Show full-screen profile if requested
+  if (showFullProfile && selectedAlumni) {
+    return (
+      <AlumniFullProfile 
+        alumni={selectedAlumni}
+        onBack={() => setShowFullProfile(false)}
+        isConnected={connectedAlumni.has(selectedAlumni.id)}
+      />
+    );
+  }
+
   const AlumniCard = ({ alumni, isGrid = true }) => (
     <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => {
       setSelectedAlumni(alumni);
@@ -223,7 +240,7 @@ export function DirectorySection() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-1 mb-3">
+            <div className="flex flex-wrap gap-1 mb-3 justify-center">
               {alumni.batchmates && (
                 <Badge variant="default" className="text-xs">Batchmate</Badge>
               )}
@@ -233,17 +250,6 @@ export function DirectorySection() {
             </div>
           </div>
         </div>
-        
-        {!isGrid && (
-          <div className="flex space-x-2">
-            <Button size="sm" variant="outline">
-              <MessageCircle className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="outline">
-              <ExternalLink className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -399,6 +405,124 @@ export function DirectorySection() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Alumni Profile</DialogTitle>
+          </DialogHeader>
+          {selectedAlumni && (
+            <div className="space-y-6">
+              {/* Profile Header */}
+              <div className="flex items-start space-x-4">
+                <div className="relative">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={selectedAlumni.avatar} />
+                    <AvatarFallback className="text-lg">
+                      {selectedAlumni.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  {selectedAlumni.isOnline && (
+                    <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl mb-1">{selectedAlumni.name}</h2>
+                  <p className="text-gray-600 mb-2">{selectedAlumni.currentRole} at {selectedAlumni.currentCompany}</p>
+                  <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
+                    <div className="flex items-center">
+                      <GraduationCap className="h-4 w-4 mr-1" />
+                      <span>{selectedAlumni.college} '{selectedAlumni.graduationYear.slice(-2)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      <span>{selectedAlumni.location}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Briefcase className="h-4 w-4 mr-1" />
+                      <span>{selectedAlumni.experience}</span>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    {selectedAlumni.batchmates && (
+                      <Badge variant="default">Batchmate</Badge>
+                    )}
+                    {selectedAlumni.mutualConnections > 0 && (
+                      <Badge variant="secondary">{selectedAlumni.mutualConnections} mutual connections</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div>
+                <h3 className="text-lg mb-2">About</h3>
+                <p className="text-gray-700">{selectedAlumni.bio}</p>
+              </div>
+
+              {/* Skills */}
+              <div>
+                <h3 className="text-lg mb-2">Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedAlumni.skills.map((skill, index) => (
+                    <Badge key={index} variant="outline">{skill}</Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Achievements */}
+              <div>
+                <h3 className="text-lg mb-2">Achievements</h3>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  {selectedAlumni.achievements.map((achievement, index) => (
+                    <li key={index}>{achievement}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Contact Information */}
+              
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 pt-4 border-t">
+                <Button 
+                  className="flex-1"
+                  onClick={() => {
+                    setShowProfile(false);
+                    setShowFullProfile(true);
+                  }}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Full Profile
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const newConnectedAlumni = new Set(connectedAlumni);
+                    if (connectedAlumni.has(selectedAlumni.id)) {
+                      newConnectedAlumni.delete(selectedAlumni.id);
+                    } else {
+                      newConnectedAlumni.add(selectedAlumni.id);
+                    }
+                    setConnectedAlumni(newConnectedAlumni);
+                  }}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  {connectedAlumni.has(selectedAlumni.id) ? 'Connected' : 'Connect'}
+                </Button>
+                <Button variant="outline">
+                  <MessageCircle className="h-4 w-4" />
+                </Button>
+                
+                <Button variant="outline" size="sm">
+                  <Linkedin className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Full Alumni Profile Dialog */}
+      <Dialog open={showFullProfile} onOpenChange={setShowFullProfile}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Full Alumni Profile</DialogTitle>
           </DialogHeader>
           {selectedAlumni && (
             <div className="space-y-6">

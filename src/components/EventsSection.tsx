@@ -13,6 +13,34 @@ import { Calendar, MapPin, Users, Clock, Plus, MessageCircle, Star } from 'lucid
 export function EventsSection() {
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [eventType, setEventType] = useState('');
+  const [joinedEvents, setJoinedEvents] = useState<Set<number>>(new Set());
+  const [organizerRequestDialog, setOrganizerRequestDialog] = useState<{ open: boolean; eventId: number | null }>({ open: false, eventId: null });
+  const [organizerRequestText, setOrganizerRequestText] = useState('');
+  const [submittedRequests, setSubmittedRequests] = useState<Set<number>>(new Set());
+
+  const handleJoinEvent = (eventId: number) => {
+    setJoinedEvents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleOrganizerRequest = (eventId: number) => {
+    setOrganizerRequestDialog({ open: true, eventId });
+  };
+
+  const submitOrganizerRequest = () => {
+    if (organizerRequestDialog.eventId) {
+      setSubmittedRequests(prev => new Set(prev).add(organizerRequestDialog.eventId!));
+      setOrganizerRequestDialog({ open: false, eventId: null });
+      setOrganizerRequestText('');
+    }
+  };
 
   const events = [
     {
@@ -271,15 +299,21 @@ export function EventsSection() {
               </div>
 
               <div className="flex space-x-2">
-                <Button className="flex-1">
-                  Join Event
-                </Button>
-                <Button variant="outline" size="sm">
-                  <MessageCircle className="h-4 w-4" />
+                <Button 
+                  className="flex-1" 
+                  variant={joinedEvents.has(event.id) ? "secondary" : "default"}
+                  onClick={() => handleJoinEvent(event.id)}
+                >
+                  {joinedEvents.has(event.id) ? 'Leave Event' : 'Join Event'}
                 </Button>
                 {event.isCollegeEvent && event.requestedOrganizers && (
-                  <Button variant="outline" size="sm">
-                    Request Organizer Role
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleOrganizerRequest(event.id)}
+                    disabled={submittedRequests.has(event.id)}
+                  >
+                    {submittedRequests.has(event.id) ? 'Request Sent' : 'Request Organizer Role'}
                   </Button>
                 )}
               </div>
@@ -295,6 +329,44 @@ export function EventsSection() {
           </Card>
         ))}
       </div>
+
+      {/* Organizer Request Dialog */}
+      <Dialog open={organizerRequestDialog.open} onOpenChange={(open) => setOrganizerRequestDialog({ open, eventId: null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request Organizer Role</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 p-1">
+            <p className="text-sm text-gray-600">
+              Tell us why you'd like to help organize this event. Your request will be reviewed by the current organizers.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="organizerRequest">Your message</Label>
+              <Textarea 
+                id="organizerRequest"
+                placeholder="I would like to help organize this event because..."
+                value={organizerRequestText}
+                onChange={(e) => setOrganizerRequestText(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setOrganizerRequestDialog({ open: false, eventId: null })}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={submitOrganizerRequest}
+                disabled={!organizerRequestText.trim()}
+              >
+                Send Request
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

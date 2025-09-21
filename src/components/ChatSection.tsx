@@ -5,6 +5,10 @@ import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { Textarea } from './ui/textarea';
+import { Label } from './ui/label';
 import { 
   Search, 
   Send, 
@@ -23,7 +27,14 @@ import {
   Calendar,
   Briefcase,
   MapPin,
-  MessageSquare
+  MessageSquare,
+  X,
+  UserMinus,
+  Edit3,
+  User,
+  UserPlus,
+  Shield,
+  MoreVertical
 } from 'lucide-react';
 
 type TabType = 'chats' | 'communities' | 'college' | 'events' | 'opportunities';
@@ -36,6 +47,15 @@ export function ChatSection() {
   const [expandedCommunities, setExpandedCommunities] = useState<string[]>([]);
   const [expandedEvents, setExpandedEvents] = useState<string[]>([]);
   const [expandedOpportunities, setExpandedOpportunities] = useState<string[]>([]);
+  const [showMembersPanel, setShowMembersPanel] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [showEditGroup, setShowEditGroup] = useState(false);
+  const [editGroupName, setEditGroupName] = useState('');
+  const [editGroupDescription, setEditGroupDescription] = useState('');
+  
+  // Current user admin status - this would come from props/context in real app
+  const currentUserIsAdmin = true; // Set to true to test admin features
+  const currentUserId = 999; // Current user ID for comparison
 
   // User's colleges (if they studied in multiple)
   const userColleges = [
@@ -100,6 +120,72 @@ export function ChatSection() {
       avatar: 'https://github.com/shadcn.png'
     }
   ];
+
+  // Sample members data for the selected group
+  const getMembersForChat = (chatId: string) => {
+    return [
+      {
+        id: 1,
+        name: 'Rahul Kumar',
+        avatar: 'https://github.com/shadcn.png',
+        college: 'IIT Delhi',
+        year: '2018',
+        location: 'Mumbai',
+        role: 'Software Engineer',
+        company: 'Google',
+        isOnline: true,
+        isAdmin: false
+      },
+      {
+        id: 2,
+        name: 'Priya Sharma',
+        avatar: 'https://github.com/shadcn.png',
+        college: 'IIT Delhi',
+        year: '2017',
+        location: 'Bangalore',
+        role: 'Product Manager',
+        company: 'Microsoft',
+        isOnline: false,
+        isAdmin: true
+      },
+      {
+        id: 3,
+        name: 'Anjali Gupta',
+        avatar: 'https://github.com/shadcn.png',
+        college: 'NIT Trichy',
+        year: '2017',
+        location: 'Delhi',
+        role: 'Data Scientist',
+        company: 'Amazon',
+        isOnline: true,
+        isAdmin: false
+      },
+      {
+        id: 4,
+        name: 'Kiran Patel',
+        avatar: 'https://github.com/shadcn.png',
+        college: 'IIT Delhi',
+        year: '2018',
+        location: 'Pune',
+        role: 'DevOps Engineer',
+        company: 'Flipkart',
+        isOnline: false,
+        isAdmin: false
+      },
+      {
+        id: 5,
+        name: 'Vikram Singh',
+        avatar: 'https://github.com/shadcn.png',
+        college: 'IIT Delhi',
+        year: '2016',
+        location: 'Hyderabad',
+        role: 'Tech Lead',
+        company: 'Swiggy',
+        isOnline: true,
+        isAdmin: false
+      }
+    ];
+  };
 
   // Communities with WhatsApp-style structure
   const communities = [
@@ -768,108 +854,160 @@ export function ChatSection() {
     }
   ];
 
+  const getCurrentChat = () => {
+    return directChats.find(chat => chat.id === selectedChat) || 
+           { name: 'General Alumni Chat', type: 'group', members: 156 };
+  };
+
+  const currentChat = getCurrentChat();
+  const members = getMembersForChat(selectedChat);
+
+  const handleMemberAction = (action: string, member: any) => {
+    switch (action) {
+      case 'message':
+        // Navigate to DM with this user
+        console.log('Starting message with', member.name);
+        break;
+      case 'connect':
+        // Send connection request
+        console.log('Sending connection request to', member.name);
+        break;
+      case 'profile':
+        // View user profile
+        console.log('Viewing profile of', member.name);
+        break;
+      case 'kick':
+        // Admin: kick user from group
+        if (currentUserIsAdmin) {
+          console.log('Kicking user', member.name);
+        }
+        break;
+    }
+  };
+
+  const handleEditGroup = () => {
+    setEditGroupName(currentChat.name);
+    setEditGroupDescription('');
+    setShowEditGroup(true);
+  };
+
   return (
-    <div className="h-[calc(100vh-8rem)] flex bg-white rounded-lg shadow-sm border">
+    <div className="h-[calc(100vh-8rem)] flex bg-white rounded-lg shadow-sm border relative">
       {/* Chat List */}
       <div className="w-80 border-r flex flex-col overflow-hidden">
         {/* Header with Chips */}
         <div className="p-4 border-b space-y-4 flex-shrink-0">
           <div className="flex items-center justify-between w-full">
             <h2 className="font-semibold text-gray-900 truncate flex-1 min-w-0">Messages</h2>
-            <Button variant="ghost" size="sm" className="flex-shrink-0">
+            <Button variant="ghost" size="sm">
               <Plus className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Tab Chips */}
-          <div className="flex flex-wrap gap-2 w-full">
+          
+          {/* Filter Chips */}
+          <div className="flex flex-wrap gap-2">
             {renderChip('chats', 'Chats', activeTab === 'chats')}
             {renderChip('communities', 'Communities', activeTab === 'communities')}
             {renderChip('college', 'College', activeTab === 'college')}
             {renderChip('events', 'Events', activeTab === 'events')}
             {renderChip('opportunities', 'Opportunities', activeTab === 'opportunities')}
           </div>
-
-          {/* Search */}
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input placeholder="Search conversations..." className="pl-10 w-full" />
-          </div>
+          
+          
         </div>
 
-        <ScrollArea className="flex-1 p-4 overflow-hidden">
-          <div className="w-full min-w-0">
-            {activeTab === 'college' ? (
-              <>
-                {userColleges.length > 1 && renderCollegeChips()}
-                {renderCollegeChannels()}
-              </>
-            ) : (
-              renderChatList()
-            )}
+        {/* Search */}
+        <div className="p-4 border-b flex-shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search conversations..."
+              className="pl-10"
+            />
+          </div>
+        </div>
+        
+
+        {/* Chat List */}
+        <ScrollArea className="flex-1">
+          <div className="p-4 border-b space-y-4 flex-shrink-0">
+            
+            {/* College Selector for College Tab */}
+            {activeTab === 'college' && renderCollegeChips()}
+            
+            {activeTab === 'college' ? renderCollegeChannels() : renderChatList()}
           </div>
         </ScrollArea>
       </div>
 
-      {/* Chat Messages */}
+      {/* Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
-        <div className="p-4 border-b bg-gradient-to-r from-green-50 to-blue-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-lg shadow-sm">
-                🎓
-              </div>
-              <div>
-                <h2 className="text-sm font-medium text-gray-800">Alumni Hangout 🚀</h2>
-                <p className="text-xs text-gray-600">156 friends • 23 hanging out</p>
-              </div>
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+              {currentChat.type === 'individual' ? (
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={currentChat.avatar} />
+                  <AvatarFallback>{currentChat.name[0]}</AvatarFallback>
+                </Avatar>
+              ) : (
+                <span className="text-lg">👥</span>
+              )}
             </div>
-            <div className="flex space-x-2">
-              <Button variant="ghost" size="sm" className="hover:bg-white/50">
-                <Phone className="h-4 w-4 text-green-600" />
-              </Button>
-              <Button variant="ghost" size="sm" className="hover:bg-white/50">
-                <Video className="h-4 w-4 text-blue-600" />
-              </Button>
-              <Button variant="ghost" size="sm" className="hover:bg-white/50">
-                <Users className="h-4 w-4 text-gray-600" />
-              </Button>
+            <div>
+              <h3 className="font-medium">{currentChat.name}</h3>
+              {currentChat.type === 'group' && (
+                <p className="text-xs text-gray-500">{currentChat.members} members</p>
+              )}
             </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm">
+              <Phone className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm">
+              <Video className="h-4 w-4" />
+            </Button>
+            {currentChat.type === 'group' && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowMembersPanel(true)}
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Messages */}
-        <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-white to-gray-50/30">
+        <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-start space-x-3 ${
+                  message.isOwn ? 'flex-row-reverse space-x-reverse' : ''
+                }`}
               >
-                <div className={`flex space-x-2 max-w-xs lg:max-w-md ${message.isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                  {!message.isOwn && (
-                    <Avatar className="h-8 w-8 ring-2 ring-white shadow-sm">
-                      <AvatarImage src={message.avatar} />
-                      <AvatarFallback className="bg-gradient-to-br from-green-400 to-blue-500 text-white text-xs">{message.sender.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div>
-                    {!message.isOwn && (
-                      <p className="text-xs text-gray-500 mb-1 px-1">{message.sender}</p>
-                    )}
-                    <div
-                      className={`rounded-2xl px-4 py-2 shadow-sm ${
-                        message.isOwn
-                          ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
-                          : 'bg-white border border-gray-100 text-gray-900'
-                      }`}
-                    >
-                      <p className="text-sm leading-relaxed">{message.content}</p>
-                    </div>
-                    <p className={`text-xs text-gray-400 mt-1 px-1 ${message.isOwn ? 'text-right' : ''}`}>
-                      {message.timestamp}
-                    </p>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={message.avatar} />
+                  <AvatarFallback>{message.sender[0]}</AvatarFallback>
+                </Avatar>
+                <div className={`flex-1 ${message.isOwn ? 'text-right' : ''}`}>
+                  <div className={`flex items-center mb-1 ${message.isOwn ? 'justify-end space-x-reverse space-x-2' : 'space-x-2'}`}>
+                    <span className="text-sm font-medium m-[0px]">{message.sender}</span>
+                    <span className="text-xs text-gray-500 mx-[8px] my-[0px]">{message.timestamp}</span>
+                  </div>
+                  <div
+                    className={`inline-block px-3 py-2 rounded-lg max-w-xs ${
+                      message.isOwn
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-900'
+                    }`}
+                  >
+                    <p className="text-sm">{message.content}</p>
                   </div>
                 </div>
               </div>
@@ -878,33 +1016,201 @@ export function ChatSection() {
         </ScrollArea>
 
         {/* Message Input */}
-        <div className="p-4 border-t bg-white">
-          <div className="flex space-x-3 items-end">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="rounded-full h-10 w-10 p-0 hover:bg-gray-100 transition-all"
-              onClick={() => {/* Will need drawer state management */}}
-            >
-              <Plus className="h-5 w-5 text-gray-600" />
-            </Button>
+        <div className="p-4 border-t">
+          <div className="flex items-center space-x-2">
             <Input
-              placeholder=""
+              placeholder="Type a message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              className="flex-1 rounded-full bg-gray-50 border-0 px-4 py-3 focus:bg-white focus:ring-2 focus:ring-green-200 transition-all"
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && newMessage.trim()) {
-                  setNewMessage('');
-                }
-              }}
+              className="flex-1"
             />
-            <Button size="sm" className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-full h-10 w-10 p-0 shadow-md hover:shadow-lg transition-all">
+            <Button>
               <Send className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Members Sidebar */}
+      {showMembersPanel && (
+        <div className="absolute inset-y-0 right-0 w-80 bg-white border-l shadow-lg z-10 transform transition-transform duration-300 ease-in-out">
+          <div className="flex flex-col h-full">
+            {/* Members Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center space-x-3">
+                <Settings className="h-5 w-5 text-gray-600" />
+                <h3 className="font-medium">Group Settings</h3>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowMembersPanel(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Group Info */}
+            <div className="p-4 border-b">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center text-xl relative">
+                  👥
+                  {currentUserIsAdmin && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="absolute -bottom-1 -right-1 h-6 w-6 p-0 bg-white border shadow-sm hover:bg-gray-50"
+                      onClick={handleEditGroup}
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2">
+                    <h4 className="font-medium">{currentChat.name}</h4>
+                    {currentUserIsAdmin && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 w-6 p-0"
+                        onClick={handleEditGroup}
+                      >
+                        <Edit3 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500">{members.length} members</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Members List */}
+            <ScrollArea className="flex-1">
+              <div className="p-4">
+                <h5 className="font-medium text-sm text-gray-700 mb-3">Members</h5>
+                <div className="space-y-3">
+                  {members.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 flex-1">
+                        <div className="relative">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          </Avatar>
+                          {member.isOnline && (
+                            <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-500 border-2 border-white rounded-full"></div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <p className="text-sm font-medium truncate">{member.name}</p>
+                            {member.isAdmin && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Shield className="h-3 w-3 mr-1" />
+                                Admin
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-1 text-xs text-gray-500">
+                            <span>{member.role} at {member.company}</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-xs text-gray-400">
+                            <span>{member.college} '{member.year?.slice(-2)} • {member.location}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleMemberAction('message', member)}>
+                            <MessageCircle className="h-4 w-4 mr-2" />
+                            Message
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleMemberAction('connect', member)}>
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Connect
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleMemberAction('profile', member)}>
+                            <User className="h-4 w-4 mr-2" />
+                            View Profile
+                          </DropdownMenuItem>
+                          {currentUserIsAdmin && member.id !== currentUserId && (
+                            <DropdownMenuItem 
+                              onClick={() => handleMemberAction('kick', member)}
+                              className="text-red-600"
+                            >
+                              <UserMinus className="h-4 w-4 mr-2" />
+                              Remove from Group
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollArea>
+
+            {/* Leave Group Button */}
+            <div className="p-4 border-t">
+              <Button variant="destructive" className="w-full" size="sm">
+                <UserMinus className="h-4 w-4 mr-2" />
+                Leave Group
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Group Dialog */}
+      {showEditGroup && (
+        <Dialog open={showEditGroup} onOpenChange={setShowEditGroup}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Group</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 p-1">
+              <div className="space-y-2">
+                <Label htmlFor="editGroupName">Group Name</Label>
+                <Input
+                  id="editGroupName"
+                  value={editGroupName}
+                  onChange={(e) => setEditGroupName(e.target.value)}
+                  placeholder="Enter group name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editGroupDescription">Description</Label>
+                <Textarea
+                  id="editGroupDescription"
+                  value={editGroupDescription}
+                  onChange={(e) => setEditGroupDescription(e.target.value)}
+                  placeholder="Enter group description (optional)"
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setShowEditGroup(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    console.log('Saving group changes:', editGroupName, editGroupDescription);
+                    setShowEditGroup(false);
+                  }}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

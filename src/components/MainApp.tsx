@@ -68,7 +68,7 @@ export function MainApp({ onLogout, userRole }: MainAppProps) {
                 </div>
               </div>
               <div className="ml-4">
-                <h1 className="text-xl text-gray-900">AlumniConnect</h1>
+                <h1 className="text-xl text-gray-900">REunify</h1>
               </div>
             </div>
 

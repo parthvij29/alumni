@@ -140,7 +140,7 @@ export function AdminPanel({ onLogout }: AdminPanelProps) {
               <Shield className="h-8 w-8 text-blue-600 mr-3" />
               <div>
                 <h1 className="text-xl text-gray-900">Admin Panel</h1>
-                <p className="text-sm text-gray-500">AlumniConnect India</p>
+                <p className="text-sm text-gray-500">REunify</p>
               </div>
             </div>
             <Button variant="outline" onClick={onLogout}>
